@@ -638,3 +638,67 @@ contract Elona {
         external
         view
         instExists(instId)
+        returns (int256, uint64)
+    {
+        InstitutionAggregates storage a = _aggregates[instId];
+        return (a.rollingNetFlowBps, a.lastTimestamp);
+    }
+
+    function viewAgg3(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint64, uint256)
+    {
+        InstitutionAggregates storage a = _aggregates[instId];
+        return (a.rollingWindowStart, a.rollingSnapshotCount);
+    }
+
+    function viewAgg4(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint256)
+    {
+        return _aggregates[instId].lastSnapshotIndex;
+    }
+
+    function viewFlags() external view returns (bool, uint256) {
+        return (halted, snapshotFeeWei);
+    }
+
+    // -------------------------------------------------------------------------
+    // Extended analytics and batch views for off-chain dashboards
+    // -------------------------------------------------------------------------
+
+    function getSnapshotBatch(uint256 instId, uint256 offset, uint256 limit)
+        external
+        view
+        instExists(instId)
+        returns (TrendSnapshot[] memory batch)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (offset >= arr.length) return new TrendSnapshot[](0);
+        if (limit > ELN_VIEW_BATCH) limit = ELN_VIEW_BATCH;
+        uint256 end = offset + limit;
+        if (end > arr.length) end = arr.length;
+        uint256 len = end - offset;
+        batch = new TrendSnapshot[](len);
+        for (uint256 i = 0; i < len; i++) {
+            batch[i] = arr[offset + i];
+        }
+    }
+
+    function getInstitutionIdsPaginated(uint256 page, uint256 pageSize)
+        external
+        view
+        returns (uint256[] memory ids)
+    {
+        if (institutionCount == 0) return new uint256[](0);
+        if (pageSize > ELN_VIEW_BATCH) pageSize = ELN_VIEW_BATCH;
+        uint256 start = page * pageSize;
+        if (start >= institutionCount) return new uint256[](0);
+        uint256 end = start + pageSize;
+        if (end > institutionCount) end = institutionCount;
+        uint256 len = end - start;
+        ids = new uint256[](len);

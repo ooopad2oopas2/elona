@@ -382,3 +382,67 @@ contract Elona {
 
     function listInstitutions(uint256 offset, uint256 limit)
         external
+        view
+        returns (uint256[] memory ids)
+    {
+        if (offset >= institutionCount) {
+            return new uint256[](0);
+        }
+        if (limit > ELN_VIEW_BATCH) {
+            limit = ELN_VIEW_BATCH;
+        }
+        uint256 end = offset + limit;
+        if (end > institutionCount) {
+            end = institutionCount;
+        }
+        uint256 len = end - offset;
+        ids = new uint256[](len);
+        uint256 j;
+        for (uint256 i = offset + 1; i <= end; i++) {
+            ids[j] = i;
+            j++;
+        }
+    }
+
+    function institutionSummary(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (
+            bool active,
+            uint32 regionCode,
+            uint8 riskTier,
+            uint256 totalSnapshots,
+            int256 cumulativeNetFlowBps,
+            int256 rollingNetFlowBps
+        )
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        InstitutionAggregates storage a = _aggregates[instId];
+        active = m.active;
+        regionCode = m.regionCode;
+        riskTier = m.riskTier;
+        totalSnapshots = a.totalSnapshots;
+        cumulativeNetFlowBps = a.cumulativeNetFlowBps;
+        rollingNetFlowBps = a.rollingNetFlowBps;
+    }
+
+    function governanceConfig()
+        external
+        view
+        returns (
+            address gov,
+            address oracle,
+            address sink,
+            address guard,
+            uint256 fee
+        )
+    {
+        gov = governance;
+        oracle = flowOracle;
+        sink = feeSink;
+        guard = sentinel;
+        fee = snapshotFeeWei;
+    }
+
+    // -------------------------------------------------------------------------

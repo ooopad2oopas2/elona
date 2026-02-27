@@ -702,3 +702,67 @@ contract Elona {
         if (end > institutionCount) end = institutionCount;
         uint256 len = end - start;
         ids = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) {
+            ids[i] = start + i + 1;
+        }
+    }
+
+    function regionStats(uint32 regionCode)
+        external
+        view
+        returns (uint256 count, int256 totalCumulativeFlowBps)
+    {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (!_institutions[i].active) continue;
+            if (_institutions[i].regionCode != regionCode) continue;
+            count++;
+            totalCumulativeFlowBps += _aggregates[i].cumulativeNetFlowBps;
+        }
+    }
+
+    function riskTierStats(uint8 tier)
+        external
+        view
+        returns (uint256 count, int256 totalCumulativeFlowBps)
+    {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (!_institutions[i].active) continue;
+            if (_institutions[i].riskTier != tier) continue;
+            count++;
+            totalCumulativeFlowBps += _aggregates[i].cumulativeNetFlowBps;
+        }
+    }
+
+    function globalCumulativeFlow() external view returns (int256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (!_institutions[i].active) continue;
+            total += _aggregates[i].cumulativeNetFlowBps;
+        }
+    }
+
+    function globalSnapshotCount() external view returns (uint256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (!_institutions[i].active) continue;
+            total += _snapshots[i].length;
+        }
+    }
+
+    function controllerFor(uint256 instId) external view instExists(instId) returns (address) {
+        return _controllerForInst[instId];
+    }
+
+    function isActive(uint256 instId) external view returns (bool) {
+        return _institutions[instId].active;
+    }
+
+    function elnVersion() external pure returns (uint256) {
+        return ELN_VERSION;
+    }
+
+    function maxInstitutions() external pure returns (uint256) {
+        return ELN_MAX_INSTITUTIONS;
+    }
+
+    function maxSnapshotsPerInst() external pure returns (uint256) {
+        return ELN_MAX_SNAPSHOTS_PER_INST;
+    }

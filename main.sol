@@ -126,3 +126,67 @@ contract Elona {
         _;
     }
 
+    modifier onlySentinel() {
+        if (msg.sender != sentinel) revert ELN_NotSentinel();
+        _;
+    }
+
+    modifier onlyReporter() {
+        if (!isReporter[msg.sender]) revert ELN_NotReporter();
+        _;
+    }
+
+    modifier notHalted() {
+        if (halted) revert ELN_Halted();
+        _;
+    }
+
+    modifier instExists(uint256 instId) {
+        if (!_institutions[instId].active) revert ELN_InstitutionNotFound();
+        _;
+    }
+
+    constructor() {
+        governance = 0xA4b7C9e15F2038d6B1cE47D9a28F0b3E6D9C1a52;
+        flowOracle = 0x7e19F3a5B6C840d2A1b9E7c3D54F8a0C2e6D1F93;
+        feeSink = 0xC2d8E1f47A3b905cD6e2F1a8B39C4d7E0F5a1B68;
+        sentinel = 0x9f06D2c13E8b74A5C1d9F0b2A47e3C8D5B1a6E94;
+
+        snapshotFeeWei = 10_000 gwei;
+        isReporter[flowOracle] = true;
+        isReporter[governance] = true;
+    }
+
+    // Access control
+
+    function setReporter(address reporter, bool active) external onlyGovernance {
+        if (reporter == address(0)) revert ELN_ZeroAddress();
+        if (active && isReporter[reporter]) revert ELN_AlreadyReporter();
+        isReporter[reporter] = active;
+        emit ReporterSet(reporter, active);
+    }
+
+    function setSnapshotFee(uint256 newFeeWei) external onlyGovernance {
+        if (newFeeWei > 0.5 ether) revert ELN_FeeTooHigh();
+        uint256 prev = snapshotFeeWei;
+        snapshotFeeWei = newFeeWei;
+        emit SnapshotFeeUpdated(prev, newFeeWei);
+    }
+
+    function toggleHalt(bool _halted) external onlySentinel {
+        halted = _halted;
+        emit HaltToggled(_halted);
+    }
+
+    // Institution lifecycle
+
+    function onboardInstitution(
+        address controller,
+        uint32 regionCode,
+        uint8 riskTier,
+        bytes32 primaryTag,
+        bytes32[] calldata extraTags
+    ) external onlyGovernance returns (uint256 instId) {
+        if (controller == address(0)) revert ELN_ZeroAddress();
+        if (regionCode == 0) revert ELN_InvalidRegion();
+        if (riskTier == 0) revert ELN_InvalidRiskTier();

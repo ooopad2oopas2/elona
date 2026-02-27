@@ -510,3 +510,67 @@ contract Elona {
         external
         view
         instExists(instId)
+        returns (bytes32 primary, bytes32[] memory tags)
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        primary = m.primaryTag;
+        tags = m.tags;
+    }
+
+    function institutionRegionAndTier(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint32 regionCode, uint8 riskTier)
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        regionCode = m.regionCode;
+        riskTier = m.riskTier;
+    }
+
+    function institutionCumulativeNetFlow(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (int256)
+    {
+        return _aggregates[instId].cumulativeNetFlowBps;
+    }
+
+    function institutionRollingSnapshotCount(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint256)
+    {
+        return _aggregates[instId].rollingSnapshotCount;
+    }
+
+    function institutionLastTimestamp(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint64)
+    {
+        return _aggregates[instId].lastTimestamp;
+    }
+
+    function institutionLastIndex(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint256)
+    {
+        return _aggregates[instId].lastSnapshotIndex;
+    }
+
+    function institutionExists(uint256 instId) external view returns (bool) {
+        return _institutions[instId].active;
+    }
+
+    function totalInstitutions() external view returns (uint256) {
+        return institutionCount;
+    }
+
+    // Pseudo-random sampling helpers (not for security)
+

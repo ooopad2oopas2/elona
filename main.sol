@@ -62,3 +62,67 @@ contract Elona {
         uint64 lastTimestamp;
         uint64 rollingWindowStart;
         uint256 rollingSnapshotCount;
+        int256 rollingNetFlowBps;
+    }
+
+    mapping(uint256 => InstitutionMeta) private _institutions;
+    mapping(uint256 => TrendSnapshot[]) private _snapshots;
+    mapping(uint256 => InstitutionAggregates) private _aggregates;
+    mapping(address => uint256) private _instIdByAddress;
+    mapping(uint256 => address) private _controllerForInst;
+    mapping(address => bool) public isReporter;
+
+    uint256 public institutionCount;
+    bool public halted;
+
+    // Errors (ELN_ prefix)
+    error ELN_NotGovernance();
+    error ELN_NotSentinel();
+    error ELN_NotReporter();
+    error ELN_NotController();
+    error ELN_Halted();
+    error ELN_ZeroAddress();
+    error ELN_MaxInstitutions();
+    error ELN_InstitutionNotFound();
+    error ELN_MaxSnapshots();
+    error ELN_InvalidLabel();
+    error ELN_InvalidRegion();
+    error ELN_FeeTooHigh();
+    error ELN_InvalidRiskTier();
+    error ELN_AlreadyReporter();
+    error ELN_NotActive();
+    error ELN_FeeRequired();
+    error ELN_ArrayTooLong();
+    error ELN_IndexOutOfRange();
+
+    // Events (ELN_ prefix)
+    event GovernanceTransferred(address indexed previousGov, address indexed newGov);
+    event ReporterSet(address indexed reporter, bool active);
+    event InstitutionOnboarded(
+        uint256 indexed instId,
+        address indexed controller,
+        uint32 regionCode,
+        uint8 riskTier,
+        bytes32 primaryTag
+    );
+    event InstitutionDeactivated(uint256 indexed instId);
+    event SnapshotRecorded(
+        uint256 indexed instId,
+        uint256 indexed idx,
+        int32 netFlowBps,
+        uint64 notionalUsdScaled,
+        int32 sentimentScore,
+        uint32 horizonDays,
+        bytes32 labelHash
+    );
+    event SnapshotFeeUpdated(uint256 previousFee, uint256 newFee);
+    event HaltToggled(bool halted);
+    event TagsUpdated(uint256 indexed instId, bytes32[] tags);
+    event FeeCollected(address indexed payer, uint256 amountWei);
+    event TrendWindowRebased(uint256 indexed instId, uint64 fromTimestamp, uint64 toTimestamp);
+
+    modifier onlyGovernance() {
+        if (msg.sender != governance) revert ELN_NotGovernance();
+        _;
+    }
+

@@ -446,3 +446,67 @@ contract Elona {
     }
 
     // -------------------------------------------------------------------------
+    // Extended analytics views (padding for rich off-chain usage)
+    // -------------------------------------------------------------------------
+
+    function institutionSnapshotRange(uint256 instId, uint256 fromIdx, uint256 toIdx)
+        external
+        view
+        instExists(instId)
+        returns (TrendSnapshot[] memory range)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (fromIdx > toIdx || toIdx > arr.length) revert ELN_IndexOutOfRange();
+        uint256 len = toIdx - fromIdx;
+        range = new TrendSnapshot[](len);
+        for (uint256 i = 0; i < len; i++) {
+            range[i] = arr[fromIdx + i];
+        }
+    }
+
+    function institutionWindowBounds(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint64 windowStart, uint64 windowEnd)
+    {
+        InstitutionAggregates storage ag = _aggregates[instId];
+        windowStart = ag.rollingWindowStart;
+        windowEnd = ag.lastTimestamp;
+    }
+
+    function institutionRiskBucket(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint8 bucket)
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        uint8 tier = m.riskTier;
+        if (tier <= 3) bucket = 1;
+        else if (tier <= 7) bucket = 2;
+        else bucket = 3;
+    }
+
+    function rollingNetFlowScaled(uint256 instId, uint256 scale)
+        external
+        view
+        instExists(instId)
+        returns (int256 scaled)
+    {
+        InstitutionAggregates storage ag = _aggregates[instId];
+        if (scale == 0) {
+            scaled = ag.rollingNetFlowBps;
+        } else {
+            scaled = ag.rollingNetFlowBps * int256(scale);
+        }
+    }
+
+    function hasReporter(address who) external view returns (bool) {
+        return isReporter[who];
+    }
+
+    function institutionTags(uint256 instId)
+        external
+        view
+        instExists(instId)

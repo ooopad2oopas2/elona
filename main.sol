@@ -254,3 +254,67 @@ contract Elona {
         uint64 ts = uint64(block.timestamp);
         uint256 idx = arr.length;
 
+        arr.push(
+            TrendSnapshot({
+                timestamp: ts,
+                netFlowBps: netFlowBps,
+                notionalUsdScaled: notionalUsdScaled,
+                sentimentScore: sentimentScore,
+                horizonDays: horizonDays,
+                labelHash: labelHash
+            })
+        );
+
+        InstitutionAggregates storage aggr = _aggregates[instId];
+        aggr.cumulativeNetFlowBps += netFlowBps;
+        aggr.totalSnapshots = aggr.totalSnapshots + 1;
+        aggr.lastSnapshotIndex = idx;
+        aggr.lastTimestamp = ts;
+
+        uint64 windowLength = uint64(ELN_WINDOW_DAYS * 1 days);
+        if (aggr.rollingWindowStart == 0) {
+            aggr.rollingWindowStart = ts > windowLength ? ts - windowLength : 0;
+        }
+        aggr.rollingSnapshotCount = aggr.rollingSnapshotCount + 1;
+        aggr.rollingNetFlowBps += netFlowBps;
+
+        if (snapshotFeeWei > 0 && msg.value > 0) {
+            (bool ok, ) = feeSink.call{value: msg.value}("");
+            if (ok) emit FeeCollected(msg.sender, msg.value);
+        }
+
+        emit SnapshotRecorded(
+            instId,
+            idx,
+            netFlowBps,
+            notionalUsdScaled,
+            sentimentScore,
+            horizonDays,
+            labelHash
+        );
+    }
+
+    function rebaseTrendWindow(uint256 instId, uint64 fromTimestamp)
+        external
+        instExists(instId)
+    {
+        if (msg.sender != governance && msg.sender != sentinel) revert ELN_NotGovernance();
+        InstitutionAggregates storage aggr = _aggregates[instId];
+        aggr.rollingWindowStart = fromTimestamp;
+        emit TrendWindowRebased(instId, fromTimestamp, aggr.lastTimestamp);
+    }
+
+    // View helpers
+
+    function institutionForController(address controller) external view returns (uint256) {
+        return _instIdByAddress[controller];
+    }
+
+    function getInstitutionMeta(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (
+            bool active,
+            uint64 onboardedAt,
+            uint32 regionCode,

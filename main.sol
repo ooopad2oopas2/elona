@@ -1022,3 +1022,67 @@ contract Elona {
     function getMetaOnboardedAt(uint256 instId) external view instExists(instId) returns (uint64) {
         return _institutions[instId].onboardedAt;
     }
+
+    function getMetaRegion(uint256 instId) external view instExists(instId) returns (uint32) {
+        return _institutions[instId].regionCode;
+    }
+
+    function getMetaRiskTier(uint256 instId) external view instExists(instId) returns (uint8) {
+        return _institutions[instId].riskTier;
+    }
+
+    function getMetaPrimaryTag(uint256 instId) external view instExists(instId) returns (bytes32) {
+        return _institutions[instId].primaryTag;
+    }
+
+    function getAggCumulative(uint256 instId) external view instExists(instId) returns (int256) {
+        return _aggregates[instId].cumulativeNetFlowBps;
+    }
+
+    function getAggTotalSnapshots(uint256 instId) external view instExists(instId) returns (uint256) {
+        return _aggregates[instId].totalSnapshots;
+    }
+
+    function getAggLastIndex(uint256 instId) external view instExists(instId) returns (uint256) {
+        return _aggregates[instId].lastSnapshotIndex;
+    }
+
+    function getAggLastTs(uint256 instId) external view instExists(instId) returns (uint64) {
+        return _aggregates[instId].lastTimestamp;
+    }
+
+    function getAggRollingStart(uint256 instId) external view instExists(instId) returns (uint64) {
+        return _aggregates[instId].rollingWindowStart;
+    }
+
+    function getAggRollingCount(uint256 instId) external view instExists(instId) returns (uint256) {
+        return _aggregates[instId].rollingSnapshotCount;
+    }
+
+    function getAggRollingFlow(uint256 instId) external view instExists(instId) returns (int256) {
+        return _aggregates[instId].rollingNetFlowBps;
+    }
+
+    function snapshotNotionalAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (uint64)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (index >= arr.length) revert ELN_IndexOutOfRange();
+        return arr[index].notionalUsdScaled;
+    }
+
+    function snapshotHorizonAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (uint32)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (index >= arr.length) revert ELN_IndexOutOfRange();
+        return arr[index].horizonDays;
+    }
+
+    function snapshotLabelAt(uint256 instId, uint256 index)

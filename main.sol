@@ -830,3 +830,67 @@ contract Elona {
         instExists(instId)
         returns (int32)
     {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (index >= arr.length) revert ELN_IndexOutOfRange();
+        return arr[index].netFlowBps;
+    }
+
+    function snapshotSentimentAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (int32)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (index >= arr.length) revert ELN_IndexOutOfRange();
+        return arr[index].sentimentScore;
+    }
+
+    // -------------------------------------------------------------------------
+    // Composite summary for single institution (dashboard tile)
+    // -------------------------------------------------------------------------
+
+    function institutionDashboardTile(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (
+            bool active,
+            uint32 regionCode,
+            uint8 riskTier,
+            bytes32 primaryTag,
+            uint256 totalSnapshots,
+            int256 cumulativeNetFlowBps,
+            int256 rollingNetFlowBps,
+            uint64 lastTimestamp,
+            int32 latestSentimentScore,
+            int32 latestNetFlowBps
+        )
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        InstitutionAggregates storage a = _aggregates[instId];
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        active = m.active;
+        regionCode = m.regionCode;
+        riskTier = m.riskTier;
+        primaryTag = m.primaryTag;
+        totalSnapshots = a.totalSnapshots;
+        cumulativeNetFlowBps = a.cumulativeNetFlowBps;
+        rollingNetFlowBps = a.rollingNetFlowBps;
+        lastTimestamp = a.lastTimestamp;
+        if (arr.length > 0) {
+            latestSentimentScore = arr[arr.length - 1].sentimentScore;
+            latestNetFlowBps = arr[arr.length - 1].netFlowBps;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Platform config and health (for monitoring)
+    // -------------------------------------------------------------------------
+
+    function platformHalted() external view returns (bool) {
+        return halted;
+    }
+
+    function feeWei() external view returns (uint256) {
+        return snapshotFeeWei;

@@ -1214,3 +1214,67 @@ contract Elona {
             uint64 lastTimestamp,
             uint64 rollingWindowStart,
             uint256 rollingSnapshotCount,
+            int256 rollingNetFlowBps
+        )
+    {
+        InstitutionAggregates storage a = _aggregates[instId];
+        cumulativeNetFlowBps = a.cumulativeNetFlowBps;
+        totalSnapshots = a.totalSnapshots;
+        lastSnapshotIndex = a.lastSnapshotIndex;
+        lastTimestamp = a.lastTimestamp;
+        rollingWindowStart = a.rollingWindowStart;
+        rollingSnapshotCount = a.rollingSnapshotCount;
+        rollingNetFlowBps = a.rollingNetFlowBps;
+    }
+
+    function getConfigBlob()
+        external
+        view
+        returns (
+            address gov,
+            address oracle,
+            address sink,
+            address guard,
+            uint256 feeWei_,
+            bool halted_,
+            uint256 instCount
+        )
+    {
+        gov = governance;
+        oracle = flowOracle;
+        sink = feeSink;
+        guard = sentinel;
+        feeWei_ = snapshotFeeWei;
+        halted_ = halted;
+        instCount = institutionCount;
+    }
+
+    function elnViewBatchSize() external pure returns (uint256) {
+        return ELN_VIEW_BATCH;
+    }
+
+    function isValidInstId(uint256 instId) external view returns (bool) {
+        return instId >= 1 && instId <= institutionCount && _institutions[instId].active;
+    }
+
+    // -------------------------------------------------------------------------
+    // Further analytics views for institutional trend dashboards
+    // -------------------------------------------------------------------------
+
+    function getInstitutionMetaBlob(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (
+            bool active_,
+            uint64 onboardedAt_,
+            uint32 regionCode_,
+            uint8 riskTier_,
+            bytes32 primaryTag_,
+            uint256 tagsLength
+        )
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        active_ = m.active;
+        onboardedAt_ = m.onboardedAt;
+        regionCode_ = m.regionCode;

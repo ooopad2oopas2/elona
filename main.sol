@@ -766,3 +766,67 @@ contract Elona {
     function maxSnapshotsPerInst() external pure returns (uint256) {
         return ELN_MAX_SNAPSHOTS_PER_INST;
     }
+
+    function windowDays() external pure returns (uint256) {
+        return ELN_WINDOW_DAYS;
+    }
+
+    function domainSalt() external pure returns (bytes32) {
+        return ELN_DOMAIN_SALT;
+    }
+
+    function flowFeedSalt() external pure returns (bytes32) {
+        return ELN_FLOW_FEED_SALT;
+    }
+
+    // -------------------------------------------------------------------------
+    // Sentiment and flow analytics views
+    // -------------------------------------------------------------------------
+
+    function latestSentiment(uint256 instId) external view instExists(instId) returns (int32) {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (arr.length == 0) return 0;
+        return arr[arr.length - 1].sentimentScore;
+    }
+
+    function latestNetFlowBps(uint256 instId) external view instExists(instId) returns (int32) {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (arr.length == 0) return 0;
+        return arr[arr.length - 1].netFlowBps;
+    }
+
+    function latestNotionalScaled(uint256 instId) external view instExists(instId) returns (uint64) {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (arr.length == 0) return 0;
+        return arr[arr.length - 1].notionalUsdScaled;
+    }
+
+    function latestHorizonDays(uint256 instId) external view instExists(instId) returns (uint32) {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (arr.length == 0) return 0;
+        return arr[arr.length - 1].horizonDays;
+    }
+
+    function latestLabelHash(uint256 instId) external view instExists(instId) returns (bytes32) {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (arr.length == 0) return bytes32(0);
+        return arr[arr.length - 1].labelHash;
+    }
+
+    function snapshotTimestampAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (uint64)
+    {
+        TrendSnapshot[] storage arr = _snapshots[instId];
+        if (index >= arr.length) revert ELN_IndexOutOfRange();
+        return arr[index].timestamp;
+    }
+
+    function snapshotNetFlowAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (int32)
+    {

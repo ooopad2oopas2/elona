@@ -1150,3 +1150,67 @@ contract Elona {
         for (uint256 i = 1; i <= institutionCount; i++) {
             if (_institutions[i].active && _institutions[i].riskTier == tier) n++;
         }
+    }
+
+    function totalSnapshotsAcrossAll() external view returns (uint256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active) total += _snapshots[i].length;
+        }
+    }
+
+    function cumulativeFlowByRegion(uint32 regionCode) external view returns (int256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].regionCode == regionCode) {
+                total += _aggregates[i].cumulativeNetFlowBps;
+            }
+        }
+    }
+
+    function cumulativeFlowByRiskTier(uint8 tier) external view returns (int256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].riskTier == tier) {
+                total += _aggregates[i].cumulativeNetFlowBps;
+            }
+        }
+    }
+
+    function rollingFlowByRegion(uint32 regionCode) external view returns (int256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].regionCode == regionCode) {
+                total += _aggregates[i].rollingNetFlowBps;
+            }
+        }
+    }
+
+    function rollingFlowByRiskTier(uint8 tier) external view returns (int256 total) {
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].riskTier == tier) {
+                total += _aggregates[i].rollingNetFlowBps;
+            }
+        }
+    }
+
+    function viewBatchMeta(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint32 regionCode, uint8 riskTier, bytes32 primaryTag, uint64 onboardedAt)
+    {
+        InstitutionMeta storage m = _institutions[instId];
+        regionCode = m.regionCode;
+        riskTier = m.riskTier;
+        primaryTag = m.primaryTag;
+        onboardedAt = m.onboardedAt;
+    }
+
+    function viewBatchAgg(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (
+            int256 cumulativeNetFlowBps,
+            uint256 totalSnapshots,
+            uint256 lastSnapshotIndex,
+            uint64 lastTimestamp,
+            uint64 rollingWindowStart,
+            uint256 rollingSnapshotCount,

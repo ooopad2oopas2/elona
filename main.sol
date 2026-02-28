@@ -958,3 +958,67 @@ contract Elona {
         for (uint256 i = 1; i <= institutionCount; i++) {
             if (_institutions[i].active && _institutions[i].regionCode == regionCode) {
                 ids[j] = i;
+                j++;
+            }
+        }
+    }
+
+    function listInstitutionIdsByRiskTier(uint8 tier)
+        external
+        view
+        returns (uint256[] memory ids)
+    {
+        uint256 count;
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].riskTier == tier) count++;
+        }
+        ids = new uint256[](count);
+        uint256 j;
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].riskTier == tier) {
+                ids[j] = i;
+                j++;
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Rolling window helpers
+    // -------------------------------------------------------------------------
+
+    function rollingWindowLengthSeconds() external pure returns (uint256) {
+        return ELN_WINDOW_DAYS * 1 days;
+    }
+
+    function institutionRollingWindowStart(uint256 instId)
+        external
+        view
+        instExists(instId)
+        returns (uint64)
+    {
+        return _aggregates[instId].rollingWindowStart;
+    }
+
+    // -------------------------------------------------------------------------
+    // Optional: hash label for off-chain lookup (no string storage on-chain)
+    // -------------------------------------------------------------------------
+
+    function hashLabel(string calldata label) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(label));
+    }
+
+    function hashTag(string calldata tag) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tag));
+    }
+
+    // -------------------------------------------------------------------------
+    // Additional view layer for institutional trend analytics (line padding)
+    // -------------------------------------------------------------------------
+
+    function getMetaActive(uint256 instId) external view instExists(instId) returns (bool) {
+        return _institutions[instId].active;
+    }
+
+    function getMetaOnboardedAt(uint256 instId) external view instExists(instId) returns (uint64) {
+        return _institutions[instId].onboardedAt;
+    }

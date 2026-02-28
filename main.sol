@@ -894,3 +894,67 @@ contract Elona {
 
     function feeWei() external view returns (uint256) {
         return snapshotFeeWei;
+    }
+
+    function governanceAddr() external view returns (address) {
+        return governance;
+    }
+
+    function oracleAddr() external view returns (address) {
+        return flowOracle;
+    }
+
+    function feeSinkAddr() external view returns (address) {
+        return feeSink;
+    }
+
+    function sentinelAddr() external view returns (address) {
+        return sentinel;
+    }
+
+    // -------------------------------------------------------------------------
+    // Tag and filter helpers
+    // -------------------------------------------------------------------------
+
+    function institutionTagCount(uint256 instId) external view instExists(instId) returns (uint256) {
+        return _institutions[instId].tags.length;
+    }
+
+    function institutionTagAt(uint256 instId, uint256 index)
+        external
+        view
+        instExists(instId)
+        returns (bytes32)
+    {
+        bytes32[] storage tags = _institutions[instId].tags;
+        if (index >= tags.length) revert ELN_IndexOutOfRange();
+        return tags[index];
+    }
+
+    function hasTag(uint256 instId, bytes32 tagHash) external view instExists(instId) returns (bool) {
+        InstitutionMeta storage m = _institutions[instId];
+        if (m.primaryTag == tagHash) return true;
+        for (uint256 i = 0; i < m.tags.length; i++) {
+            if (m.tags[i] == tagHash) return true;
+        }
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Batch region/risk enumeration
+    // -------------------------------------------------------------------------
+
+    function listInstitutionIdsByRegion(uint32 regionCode)
+        external
+        view
+        returns (uint256[] memory ids)
+    {
+        uint256 count;
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].regionCode == regionCode) count++;
+        }
+        ids = new uint256[](count);
+        uint256 j;
+        for (uint256 i = 1; i <= institutionCount; i++) {
+            if (_institutions[i].active && _institutions[i].regionCode == regionCode) {
+                ids[j] = i;
